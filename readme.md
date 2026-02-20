@@ -23,19 +23,6 @@ Bu proje, masaüstünüzde şeffaf bir widget olarak çalışan, Diyanet İşler
 \* \*\*Hata Toleransı (Deep Search):\*\* API'den gelen karmaşık JSON verilerinin içinde vakitleri derinlemesine tarayarak bulan akıllı algoritma.
 
 
-
-\## 📸 Ekran Görüntüleri
-
-
-
-\*(Buraya GitHub'a yüklediğinde uygulamanın masaüstündeki ve sağ alt tray kısmındaki ekran görüntülerini ekleyebilirsin.)\*
-
-\* `!\[Masaüstü Widget Görünümü](link-gelecek)`
-
-\* `!\[Tray İkon Görünümü](link-gelecek)`
-
-
-
 \## 🚀 Kurulum ve Çalıştırma
 
 
@@ -61,4 +48,5 @@ Projeyi kendi bilgisayarınızda çalıştırmak veya geliştirmek için aşağ�
 &nbsp;  git clone \[https://github.com/kullaniciadiniz/proje-adiniz.git](https://github.com/kullaniciadiniz/proje-adiniz.git)
 
 &nbsp;  cd proje-adiniz
+
 

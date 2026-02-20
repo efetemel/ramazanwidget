@@ -1,4 +1,4 @@
-\# 🌙 Ramazan Masaüstü Widget (İftar \& Sahur Sayacı)
+# 🌙 Ramazan Masaüstü Widget (İftar \& Sahur Sayacı)
 
 
 
@@ -6,47 +6,19 @@ Bu proje, masaüstünüzde şeffaf bir widget olarak çalışan, Diyanet İşler
 
 
 
-\## ✨ Özellikler
+## ✨ Özellikler
 
 
 
-\* \*\*Tam Uyumlu Veri:\*\* `ezanvakti.imsakiyem.com` API'si kullanılarak Diyanet ile birebir uyumlu İmsak ve Akşam vakitleri.
+Tam Uyumlu Veri: `ezanvakti.imsakiyem.com` API'si kullanılarak Diyanet ile birebir uyumlu İmsak ve Akşam vakitleri.
 
-\* \*\*Şeffaf ve Modern Arayüz:\*\* TailwindCSS ile tasarlanmış, arkaplanı bulanık (backdrop-blur) ve şık masaüstü widget tasarımı.
+Şeffaf ve Modern Arayüz: TailwindCSS ile tasarlanmış, arkaplanı bulanık (backdrop-blur) ve şık masaüstü widget tasarımı.
 
-\* \*\*Dinamik Sistem Tepsisi (Tray):\*\* Uygulama arkaplanda çalışırken, Windows/Mac görev çubuğundaki küçük ikonda iftara veya sahura kalan süreyi (saat veya dakika cinsinden) canlı olarak çizer.
+Dinamik Sistem Tepsisi (Tray): Uygulama arkaplanda çalışırken, Windows/Mac görev çubuğundaki küçük ikonda iftara veya sahura kalan süreyi (saat veya dakika cinsinden) canlı olarak çizer.
 
-\* \*\*Akıllı Konum Arama:\*\* Şehir ve İlçe isimlerini Türkçe karakter veya büyük/küçük harf duyarlılığı olmadan otomatik eşleştirir ve ID'leri belleğe (cache) alır.
+Akıllı Konum Arama: Şehir ve İlçe isimlerini Türkçe karakter veya büyük/küçük harf duyarlılığı olmadan otomatik eşleştirir ve ID'leri belleğe (cache) alır.
 
-\* \*\*Kesintisiz Geçiş:\*\* İftar vakti girdiğinde otomatik olarak yarının sahur vaktine; sahur vakti girdiğinde ise bugünün iftar vaktine geri sayımı günceller.
+Kesintisiz Geçiş: İftar vakti girdiğinde otomatik olarak yarının sahur vaktine; sahur vakti girdiğinde ise bugünün iftar vaktine geri sayımı günceller.
 
-\* \*\*Hata Toleransı (Deep Search):\*\* API'den gelen karmaşık JSON verilerinin içinde vakitleri derinlemesine tarayarak bulan akıllı algoritma.
-
-
-\## 🚀 Kurulum ve Çalıştırma
-
-
-
-Projeyi kendi bilgisayarınızda çalıştırmak veya geliştirmek için aşağıdaki adımları izleyin:
-
-
-
-\### Gereksinimler
-
-\* \[Node.js](https://nodejs.org/) (v16 veya üzeri tavsiye edilir)
-
-
-
-\### Adımlar
-
-
-
-1\. \*\*Projeyi Klonlayın:\*\*
-
-&nbsp;  ```bash
-
-&nbsp;  git clone \[https://github.com/kullaniciadiniz/proje-adiniz.git](https://github.com/kullaniciadiniz/proje-adiniz.git)
-
-&nbsp;  cd proje-adiniz
-
+Hata Toleransı (Deep Search): API'den gelen karmaşık JSON verilerinin içinde vakitleri derinlemesine tarayarak bulan akıllı algoritma.
 

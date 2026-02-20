@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Ayarlar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            -webkit-user-select: none;
+            -webkit-app-region: no-drag;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-gray-100 p-6 flex flex-col h-screen justify-between antialiased">
+
+    <div>
+        <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-orange-400">
+            <i data-lucide="settings-2"></i> Ayarlar
+        </h2>
+
+        <div class="space-y-4">
+            <div>
+                <label for="country" class="block text-sm font-medium text-gray-300 mb-1 flex items-center gap-1">
+                    <i data-lucide="globe" class="w-4 h-4"></i> Ülke (İngilizce)
+                </label>
+                <input type="text" id="country" placeholder="Örn: Turkey"
+                    class="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors text-sm">
+            </div>
+
+            <div>
+                <label for="city" class="block text-sm font-medium text-gray-300 mb-1 flex items-center gap-1">
+                    <i data-lucide="map-pin" class="w-4 h-4"></i> Şehir
+                </label>
+                <input type="text" id="city" placeholder="Örn: Samsun"
+                    class="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors text-sm">
+            </div>
+
+            <div class="flex items-center gap-2 mt-2 pt-2">
+                <input type="checkbox" id="autoStart"
+                    class="w-4 h-4 text-orange-500 bg-gray-800 border-gray-700 rounded focus:ring-orange-500 focus:ring-2 cursor-pointer">
+                <label for="autoStart" class="text-sm font-medium text-gray-300 cursor-pointer">
+                    Windows açıldığında otomatik başlat
+                </label>
+            </div>
+        </div>
+
+        <button id="saveBtn"
+            class="mt-6 w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all active:scale-95">
+            <i data-lucide="save" class="w-5 h-5"></i> Kaydet ve Kapat
+        </button>
+    </div>
+
+    <div class="text-center text-xs text-gray-500 pb-2">
+        Coded by <a href="#" id="githubLink"
+            class="text-orange-400 hover:text-orange-300 transition-colors font-semibold">efetemel</a>
+    </div>
+
+    <script>
+        const fs = require('fs');
+        const path = require('path');
+        const { ipcRenderer, shell } = require('electron'); // shell modülü eklendi
+
+        lucide.createIcons();
+        const userDataPath = ipcRenderer.sendSync('get-userData-path');
+        const infoPath = path.join(userDataPath, 'info.json');
+        // Ayarları Yükle
+        if (fs.existsSync(infoPath)) {
+            try {
+                const data = JSON.parse(fs.readFileSync(infoPath, 'utf-8'));
+                document.getElementById('country').value = data.country || "Turkey";
+                document.getElementById('city').value = data.city || "Samsun";
+                document.getElementById('autoStart').checked = data.autoStart === true;
+            } catch (e) { console.error(e); }
+        }
+
+        // Kaydet Butonu
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            const country = document.getElementById('country').value.trim();
+            const city = document.getElementById('city').value.trim();
+            const autoStart = document.getElementById('autoStart').checked;
+
+            const jsonData = JSON.stringify({ country, city, autoStart }, null, 2);
+            fs.writeFileSync(infoPath, jsonData, 'utf-8');
+
+            ipcRenderer.send('settings-saved');
+            window.close();
+        });
+
+        // GitHub Linkine Tıklama Olayı (Dış tarayıcıda açar)
+        document.getElementById('githubLink').addEventListener('click', (e) => {
+            e.preventDefault(); // Sayfanın yönlenmesini engelle
+            shell.openExternal('https://github.com/efetemel');
+        });
+    </script>
+</body>
+
+</html>

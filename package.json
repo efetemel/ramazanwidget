@@ -1,0 +1,41 @@
+{
+  "name": "ramazan-widget",
+  "version": "1.0.0",
+  "description": "Masaüstü İftar ve Sahur Sayacı",
+  "main": "main.js",
+  "author": "efetemel",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win"
+  },
+  "build": {
+    "appId": "io.efetemel.ramazanwidget",
+    "productName": "Ramazan Sayacı",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "images/image.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+  "oneClick": false,
+  "allowToChangeInstallationDirectory": true,
+  "createDesktopShortcut": true,
+  "createStartMenuShortcut": true,
+  "shortcutName": "Ramazan Sayacı",
+  "language": "1055"
+}
+  },
+  "devDependencies": {
+    "electron": "^40.6.0",
+    "electron-builder": "^26.8.1"
+  }
+}

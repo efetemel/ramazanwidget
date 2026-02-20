@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            -webkit-user-select: none;
+            overflow: hidden;
+        }
+
+        .blink {
+            animation: blinker 1s linear infinite;
+        }
+
+        @keyframes blinker {
+            50% {
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-transparent h-screen flex items-center justify-center p-2">
+
+    <div
+        class="bg-black/80 backdrop-blur-md text-white rounded-2xl py-3 px-4 flex items-center gap-4 shadow-lg border border-white/10 w-full max-h-[120px] overflow-y-auto">
+
+        <div class="bg-white/10 p-2 rounded-full shrink-0">
+            <i id="icon-iftar" data-lucide="sunset" class="w-6 h-6 text-orange-400 hidden"></i>
+            <i id="icon-sahur" data-lucide="moon-star" class="w-6 h-6 text-blue-300 hidden"></i>
+            <i id="icon-error" data-lucide="triangle-alert" class="w-6 h-6 text-red-500 hidden"></i>
+        </div>
+
+        <div class="flex flex-col leading-tight w-full">
+            <div id="location-info" class="text-xs text-gray-300 font-medium uppercase tracking-wider">
+                Sistem Başlatılıyor...
+            </div>
+            <div id="countdown-timer"
+                class="text-xl font-black tracking-tight font-mono break-words whitespace-pre-wrap">
+                --:--:--
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        const fs = require('fs');
+        const path = require('path');
+
+        lucide.createIcons();
+        const canvas = document.createElement('canvas');
+        canvas.width = 32; canvas.height = 32;
+        const ctx = canvas.getContext('2d');
+        const userDataPath = ipcRenderer.sendSync('get-userData-path');
+        const infoPath = path.join(userDataPath, 'info.json');
+
+        let city = "SAMSUN";
+        let district = "ATAKUM";
+        let districtIdCache = null;
+        let targetTime = null;
+        let targetName = "";
+        let countdownInterval = null;
+
+        const normalizeForSearch = (str) => {
+            if (!str) return "";
+            return str.toString().toLocaleUpperCase('tr-TR').replace(/İ/g, 'I').replace(/I/g, 'I').replace(/Ö/g, 'O').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ç/g, 'C').replace(/Ğ/g, 'G').trim().replace(/\s+/g, '');
+        };
+
+        function showErrorOnScreen(errContext, errMessage) {
+            document.getElementById('location-info').innerText = `HATA: ${errContext}`;
+            const timerEl = document.getElementById('countdown-timer');
+            timerEl.innerText = errMessage;
+            timerEl.classList.remove('text-xl');
+            timerEl.classList.add('text-[10px]', 'text-red-400', 'leading-tight', 'mt-1');
+            document.getElementById('icon-error').classList.remove('hidden');
+            document.getElementById('icon-iftar').classList.add('hidden');
+            document.getElementById('icon-sahur').classList.add('hidden');
+        }
+
+        async function fetchDistrictId(cityName, districtName) {
+            const statesRes = await fetch('https://ezanvakti.imsakiyem.com/api/locations/states?countryId=2');
+            const statesJson = await statesRes.json();
+            const statesList = statesJson.data || statesJson || [];
+            const state = statesList.find(s => normalizeForSearch(s.name) === normalizeForSearch(cityName));
+            if (!state) throw new Error(`Şehir bulunamadı: ${cityName}`);
+
+            const districtsRes = await fetch(`https://ezanvakti.imsakiyem.com/api/locations/districts?stateId=${state._id || state.id}`);
+            const districtsJson = await districtsRes.json();
+            const districtsList = districtsJson.data || districtsJson || [];
+
+            let targetDist = districtsList.find(d => normalizeForSearch(d.name) === normalizeForSearch(districtName)) ||
+                districtsList.find(d => normalizeForSearch(d.name) === "MERKEZ") ||
+                districtsList[0];
+
+            if (!targetDist) throw new Error(`İlçe bulunamadı: ${districtName}`);
+            return targetDist._id || targetDist.id;
+        }
+
+        // --- AKILLI DERİN ARAMA (DEEP SEARCH) ---
+        // Objenin içinde ne kadar gizlenirse gizlensin vakti bulur
+        const findDeepValue = (obj, keywords) => {
+            if (typeof obj !== 'object' || obj === null) return null;
+            for (let key in obj) {
+                if (typeof obj[key] === 'string') {
+                    const val = obj[key].trim();
+                    // Anahtar kelime eşleşiyorsa ve değer "05:34" gibi bir saat formatındaysa
+                    if (keywords.some(k => key.toLowerCase().includes(k)) && /^\d{1,2}:\d{2}/.test(val)) {
+                        return val;
+                    }
+                }
+                if (typeof obj[key] === 'object') {
+                    const res = findDeepValue(obj[key], keywords);
+                    if (res) return res;
+                }
+            }
+            return null;
+        };
+
+        async function fetchPrayerTimes() {
+            try {
+                if (!districtIdCache) {
+                    districtIdCache = await fetchDistrictId(city, district);
+                }
+
+                const response = await fetch(`https://ezanvakti.imsakiyem.com/api/prayer-times/${districtIdCache}/monthly`);
+                const dataResponse = await response.json();
+                const data = dataResponse.data || dataResponse || [];
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    throw new Error("Vakit dizisi boş.");
+                }
+
+                const now = new Date();
+                const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+                const todayData = data.find(d => JSON.stringify(d).includes(todayIso));
+                if (!todayData) throw new Error(`Tarih eşleşmedi (${todayIso})`);
+
+                // Vakitleri iç içe dizinlerde arıyoruz
+                const imsakStr = findDeepValue(todayData, ['imsak', 'fajr']);
+                const aksamStr = findDeepValue(todayData, ['aksam', 'maghrib', 'iftar']);
+
+                if (!imsakStr || !aksamStr) {
+                    // Hala bulamadıysa verinin içini komple ekrana basıyoruz ki yapıyı görelim
+                    throw new Error("JSON: " + JSON.stringify(todayData).substring(0, 150));
+                }
+
+                const [imsakH, imsakM] = imsakStr.split(':');
+                const [maghribH, maghribM] = aksamStr.split(':');
+
+                const imsakTime = new Date(); imsakTime.setHours(imsakH, imsakM, 0, 0);
+                const maghribTime = new Date(); maghribTime.setHours(maghribH, maghribM, 0, 0);
+
+                if (now < imsakTime) {
+                    targetTime = imsakTime;
+                    targetName = "Sahura";
+                }
+                else if (now < maghribTime) {
+                    targetTime = maghribTime;
+                    targetName = "İftara";
+                }
+                else {
+                    const tomorrow = new Date(now);
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    const tIso = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+                    const tomorrowData = data.find(d => JSON.stringify(d).includes(tIso));
+
+                    if (tomorrowData) {
+                        const tImsakStr = findDeepValue(tomorrowData, ['imsak', 'fajr']);
+                        if (tImsakStr) {
+                            const [tImsakH, tImsakM] = tImsakStr.split(':');
+                            targetTime = new Date(tomorrow);
+                            targetTime.setHours(tImsakH, tImsakM, 0, 0);
+                        } else {
+                            targetTime = new Date(imsakTime); targetTime.setDate(targetTime.getDate() + 1);
+                        }
+                    } else {
+                        targetTime = new Date(imsakTime); targetTime.setDate(targetTime.getDate() + 1);
+                    }
+                    targetName = "Sahura";
+                }
+
+                const timerEl = document.getElementById('countdown-timer');
+                timerEl.classList.remove('text-[10px]', 'text-red-400', 'mt-1');
+                timerEl.classList.add('text-xl');
+                document.getElementById('icon-error').classList.add('hidden');
+                document.getElementById('location-info').innerText = `${city.toUpperCase()} • ${targetName.toUpperCase()}`;
+
+            } catch (error) {
+                showErrorOnScreen("VAKİT HATASI", error.message);
+                targetTime = null;
+            }
+        }
+
+        function updateCountdown() {
+            if (!targetTime) return;
+            const now = new Date();
+            let diff = targetTime - now;
+
+            if (diff < 0) { fetchPrayerTimes().then(updateCountdown); return; }
+
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            const timerEl = document.getElementById('countdown-timer');
+            const hStr = hours.toString().padStart(2, '0');
+            const mStr = minutes.toString().padStart(2, '0');
+            const sStr = seconds.toString().padStart(2, '0');
+
+            timerEl.innerHTML = `${hStr}<span class="blink text-orange-500">:</span>${mStr}<span class="blink text-gray-500">:</span>${sStr}`;
+
+            const iconIftar = document.getElementById('icon-iftar');
+            const iconSahur = document.getElementById('icon-sahur');
+            const locationEl = document.getElementById('location-info');
+
+            if (targetName === "İftara") {
+                iconIftar.classList.remove('hidden');
+                iconSahur.classList.add('hidden');
+                locationEl.classList.add('text-orange-300');
+                locationEl.classList.remove('text-blue-300');
+            } else {
+                iconIftar.classList.add('hidden');
+                iconSahur.classList.remove('hidden');
+                locationEl.classList.add('text-blue-300');
+                locationEl.classList.remove('text-orange-300');
+            }
+
+            const fullTrayText = `${city} ${targetName}: ${hours}s ${minutes}d ${seconds}sn`;
+            ctx.clearRect(0, 0, 32, 32);
+            ctx.font = 'bold 22px Arial, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            let displayText = hours > 0 ? `${hours}s` : `${minutes}d`;
+            ctx.fillStyle = hours > 0 ? '#FFFFFF' : '#FFA500';
+            ctx.fillText(displayText, 16, 18);
+            ipcRenderer.send('update-tray', canvas.toDataURL('image/png'), fullTrayText);
+        }
+
+        function initApp() {
+            if (fs.existsSync(infoPath)) {
+                try {
+                    const data = JSON.parse(fs.readFileSync(infoPath, 'utf-8'));
+                    city = data.city || "SAMSUN"; district = data.district || "ATAKUM";
+                } catch (e) { console.error(e); }
+            }
+            districtIdCache = null;
+            fetchPrayerTimes().then(() => {
+                if (countdownInterval) clearInterval(countdownInterval);
+                countdownInterval = setInterval(updateCountdown, 1000);
+            });
+        }
+
+        ipcRenderer.on('reload-settings', initApp);
+        initApp();
+        setInterval(fetchPrayerTimes, 1000 * 60 * 60);
+    </script>
+</body>
+
+</html>

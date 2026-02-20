@@ -22,3 +22,6 @@ Kesintisiz Geçiş: İftar vakti girdiğinde otomatik olarak yarının sahur vak
 
 Hata Toleransı (Deep Search): API'den gelen karmaşık JSON verilerinin içinde vakitleri derinlemesine tarayarak bulan akıllı algoritma.
 
+<img width="332" height="439" alt="Screenshot 2026-02-20 210311" src="https://github.com/user-attachments/assets/57ba3869-041b-443e-8466-f59d17de2087" />
+<img width="262" height="76" alt="Screenshot 2026-02-20 210300" src="https://github.com/user-attachments/assets/7b94afe4-d161-4ae3-ad24-c026fd3d9362" />
+
